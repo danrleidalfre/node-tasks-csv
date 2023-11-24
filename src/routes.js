@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { Database } from './database.js'
 import { buildRoutePath } from './utils/build-route-path.js'
+import { formatCurrentDate } from './utils/format-current-date.js'
 
 const database = new Database()
 
@@ -9,7 +10,12 @@ export const routes = [
     method: 'GET',
     path: buildRoutePath('/tasks'),
     handler: (req, res) => {
-      const tasks = database.select('tasks')
+      const { search } = req.query
+
+      const tasks = database.select('tasks', search ? {
+        title: search,
+        description: search
+      } : null)
 
       return res.end(JSON.stringify(tasks))
     },
@@ -21,18 +27,15 @@ export const routes = [
       const { 
         title,
         description,
-        completed_at,
-        created_at,
-        updated_at
       } = req.body
 
       const user = {
         id: randomUUID(),
         title,
         description,
-        completed_at,
-        created_at,
-        updated_at
+        completed_at: null,
+        created_at: formatCurrentDate(),
+        updated_at: null
       }
 
       database.insert('tasks', user)
@@ -47,18 +50,13 @@ export const routes = [
       const { id } = req.params
       const { 
         title,
-        description,
-        completed_at,
-        created_at,
-        updated_at
+        description
       } = req.body
 
       database.update('tasks', id, { 
         title,
         description,
-        completed_at,
-        created_at,
-        updated_at
+        updated_at: formatCurrentDate()
       })
 
       return res.writeHead(204).end()
